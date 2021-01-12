@@ -16,27 +16,12 @@ contract FlightSuretyApp {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    // Flight status codees
-    uint8 private constant STATUS_CODE_UNKNOWN = 0;
-    uint8 private constant STATUS_CODE_ON_TIME = 10;
-    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
-    uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
-    uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
-    uint8 private constant STATUS_CODE_LATE_OTHER = 50;
-
-    uint constant AIRLINE_REGISTRATION_COUNT_LIMIT = 4;
-    uint public constant FUNDING_AMOUNT = 10 ether;
-
     address private contractOwner;          // Account used to deploy contract
 
-    struct Flight {
-        bool isRegistered;
-        uint8 statusCode;
-        uint256 updatedTimestamp;
-        address airline;
-    }
-    mapping(bytes32 => Flight) private flights;
-
+    uint constant AIRLINE_REGISTRATION_COUNT_THRESHOLD = 4;
+    uint constant AIRLINE_FUNDING_MIN_AMOUNT = 10 ether;
+    uint constant PASSENGER_PAYMENT_MAX_AMOUNT = 1 ether;
+    uint constant INSURANCE_PAYOUT_MULTIPLIER = 150;
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */

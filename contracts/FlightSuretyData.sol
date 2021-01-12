@@ -13,7 +13,7 @@ contract FlightSuretyData {
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
     mapping(address => uint256) private authorizedContracts;
 
-    struct airline {
+    struct Airline {
         string name;
         bool registered;
         bool funded;
@@ -21,8 +21,26 @@ contract FlightSuretyData {
         uint256 votes;
     }
 
-    mapping(address => airline) private airlines;
+    mapping(address => Airline) private airlines;
     address[] airlineAddresses = new address[](0);
+
+    struct Flight {
+        bool registered;
+        uint8 statusCode;
+        uint256 updatedTimestamp;
+        address airline;
+        string flight;
+    }
+    mapping(bytes32 => Flight) private flights;
+    bytes32[] flightKeys = new bytes32[](0);
+
+    // Flight status codees
+    uint8 private constant STATUS_CODE_UNKNOWN = 0;
+    uint8 private constant STATUS_CODE_ON_TIME = 10;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
+    uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
+    uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     /********************************************************************************************/
     /*                                        CONSTRUCTOR                                       */
@@ -38,7 +56,8 @@ contract FlightSuretyData {
                                 public
     {
         contractOwner = msg.sender;
-        airlines[msg.sender] = airline({name: 'Owner Air', registered: true, funded: true, votes: 0});
+        airlines[msg.sender] = Airline({name: 'Owner Air', registered: true, funded: true, votes: 0});
+        airlineAddresses.push(msg.sender);
     }
 
     /********************************************************************************************/
@@ -47,6 +66,7 @@ contract FlightSuretyData {
 
     event AirlineRegistered(address airlineAddress, string airlineName);
     event AirlineFunded(address airlineAddress, string airlineName);
+    event FlightRegistered(bytes32 flightKey, address airline, string flight, uint256 timestamp);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -116,7 +136,7 @@ contract FlightSuretyData {
     *
     * When operational mode is disabled, all write transactions except for this one will fail
     */
-    function setOperatingStatus (bool mode) external requireContractOwner
+    function setOperatingStatus(bool mode) external requireContractOwner
     {
         operational = mode;
     }
@@ -143,6 +163,11 @@ contract FlightSuretyData {
         return airlineAddresses;
     }
 
+    function isFlightRegistered(address airline, string flight, uint256 timestamp) public view returns(bool)
+    {
+        return flights[getFlightKey(airline, flight, timestamp)].registered;
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -152,17 +177,25 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline (address airlineAddress, string airlineName) external requireIsOperational requireAuthorizedContract requireNotAlreadyRegistered(airlineAddress)
+    function registerAirline(address airlineAddress, string airlineName) external requireIsOperational requireAuthorizedContract requireNotAlreadyRegistered(airlineAddress)
     {
-        airlines[airlineAddress] = airline({name: airlineName, registered: true, funded: false, votes: 0});
+        airlines[airlineAddress] = Airline({name: airlineName, registered: true, funded: false, votes: 0});
         airlineAddresses.push(airlineAddress);
         emit AirlineRegistered(airlineAddress, airlineName);
     }
 
-    function fundAirline (address airlineAddress) external payable requireIsOperational requireAuthorizedContract requireRegisteredAirline(airlineAddress)
+    function fundAirline(address airlineAddress) external payable requireIsOperational requireAuthorizedContract requireRegisteredAirline(airlineAddress)
     {
         airlines[airlineAddress].funded = true;
         emit AirlineFunded(airlineAddress, airlines[airlineAddress].name);
+    }
+
+    function registerFlight(address airlineAddress, string flight, uint256 timestamp) external requireIsOperational requireAuthorizedContract requireFundedAirline(airlineAddress)
+    {
+        bytes32 flightKey = getFlightKey(airlineAddress, flight, timestamp);
+        flights[flightKey] = Flight({registered: true, statusCode: STATUS_CODE_UNKNOWN, airline: airlineAddress, flight: flight, updatedTimestamp: timestamp});
+        flightKeys.push(flightKey);
+        emit FlightRegistered(flightKey, airlineAddress, flight, timestamp);
     }
 
    /**
@@ -203,15 +236,7 @@ contract FlightSuretyData {
     {
     }
 
-    function getFlightKey
-                        (
-                            address airlineAddress,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32)
+    function getFlightKey(address airlineAddress, string memory flight, uint256 timestamp) pure internal returns(bytes32)
     {
         return keccak256(abi.encodePacked(airlineAddress, flight, timestamp));
     }
