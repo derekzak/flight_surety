@@ -15,8 +15,8 @@ To install, download or clone the repo, then:
 
 To run truffle tests:
 
-`truffle test ./test/flightSurety.js`
-`truffle test ./test/oracles.js`
+`truffle test ./test/flightSuretyTest.js`
+`truffle test ./test/oraclesTest.js`
 
 To use the dapp:
 
@@ -30,7 +30,7 @@ To view dapp:
 ## Develop Server
 
 `npm run server`
-`truffle test ./test/oracles.js`
+`truffle test ./test/oraclesTest.js`
 
 ## Deploy
 
