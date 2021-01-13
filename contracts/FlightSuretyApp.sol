@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity >=0.4.25;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
@@ -16,12 +16,28 @@ contract FlightSuretyApp {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
+    FlightSuretyData flightSuretyData;
+
     address private contractOwner;          // Account used to deploy contract
 
     uint constant AIRLINE_REGISTRATION_COUNT_THRESHOLD = 4;
     uint constant AIRLINE_FUNDING_MIN_AMOUNT = 10 ether;
     uint constant PASSENGER_PAYMENT_MAX_AMOUNT = 1 ether;
     uint constant INSURANCE_PAYOUT_MULTIPLIER = 150;
+
+    /********************************************************************************************/
+    /*                                       CONSTRUCTOR                                        */
+    /********************************************************************************************/
+
+    /**
+    * @dev Contract constructor
+    *
+    */
+    constructor(address dataContract) public
+    {
+        contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(dataContract);
+    }
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -51,32 +67,43 @@ contract FlightSuretyApp {
         _;
     }
 
+    modifier requireAirlineIsFunded(address airlineAddress)
+    {
+        require(flightSuretyData.isAirlineFunded(airlineAddress), "Only funded airlines are allowed");
+        _;
+    }
+
+    modifier requireRegisteredAirline(address airlineAddress)
+    {
+        require(flightSuretyData.isAirlineRegistered(airlineAddress), "Only registered arilines are allowed");
+        _;
+    }
+
+    modifier requireFundingMinimum(uint amount)
+    {
+        require(amount >= AIRLINE_FUNDING_MIN_AMOUNT, "Funding amount is too low");
+        _;
+    }
+
     /********************************************************************************************/
-    /*                                       CONSTRUCTOR                                        */
+    /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
-    /**
-    * @dev Contract constructor
-    *
-    */
-    constructor
-                                (
-                                )
-                                public
-    {
-        contractOwner = msg.sender;
-    }
+    event AirlineRegistered(address airlineAddress, string airlineName, uint256 votes);
+    event AirlineFunded(address airlineAddress, uint256 amount);
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational()
-                            public
-                            pure
-                            returns(bool)
+    function isOperational() public view returns(bool)
     {
-        return true;  // Modify to call data contract's status
+        return flightSuretyData.isOperational();
+    }
+
+    function make_payable(address x) internal pure returns(address)
+    {
+        return address(uint160(x));
     }
 
     /********************************************************************************************/
@@ -88,16 +115,27 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline
-                            (
-                            )
-                            external
-                            pure
-                            returns(bool success, uint256 votes)
+    function registerAirline(address airlineAddress, string airlineName) public requireIsOperational requireAirlineIsFunded(msg.sender) returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        flightSuretyData.registerAirline(airlineAddress, airlineName);
+        votes = flightSuretyData.getAirlineVotes(airlineAddress);
+        emit AirlineRegistered(airlineAddress, airlineName, votes);
+        return (success, votes);
     }
 
+   /**
+    * @dev Fund an airline
+    *
+    */
+    function fundAirline() payable external requireIsOperational requireFundingMinimum(msg.value)
+    {
+        make_payable(address(flightSuretyData)).transfer(AIRLINE_FUNDING_MIN_AMOUNT);
+        if(msg.value > AIRLINE_FUNDING_MIN_AMOUNT) {
+            msg.sender.transfer(msg.value - AIRLINE_FUNDING_MIN_AMOUNT);
+        }
+        flightSuretyData.fundAirline(msg.sender);
+        emit AirlineFunded(msg.sender, msg.value);
+    }
 
    /**
     * @dev Register a future flight for insuring.
@@ -322,4 +360,20 @@ contract FlightSuretyApp {
 
 // endregion
 
+}
+
+// FlightSuretyDdata contract
+contract FlightSuretyData {
+    // Utility functions
+    function isOperational() public view returns(bool);
+    function setOperatingStatus(bool mode) external;
+    function isAirlineRegistered(address airlineAddress) external view returns(bool);
+    function isAirlineFunded(address airlineAddress) external view returns(bool);
+    function getAirlineVotes(address airlineAddress) external view returns(uint256);
+    function getAirlineAddresses() external view returns(address[] memory);
+
+    // Contract functions
+    function registerAirline(address airlineAddress, string airlineName) external;
+    function fundAirline(address airlineAddress) external;
+    function registerFlight(address airlineAddress, string flight, uint256 timestamp) external;
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.25;
+pragma solidity >=0.4.25;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -50,10 +50,7 @@ contract FlightSuretyData {
     * @dev Constructor
     *      The deploying account becomes contractOwner
     */
-    constructor
-                                (
-                                )
-                                public
+    constructor() public
     {
         contractOwner = msg.sender;
         airlines[msg.sender] = Airline({name: 'Owner Air', registered: true, funded: true, votes: 0});
@@ -107,13 +104,13 @@ contract FlightSuretyData {
 
     modifier requireRegisteredAirline(address airlineAddress)
     {
-        require(isAirlineRegistered(airlineAddress), "Airline must be a registered airline");
+        require(this.isAirlineRegistered(airlineAddress), "Airline must be a registered airline");
         _;
     }
 
     modifier requireFundedAirline(address airlineAddress)
     {
-        require(isAirlineFunded(airlineAddress), "Airline must be a registered airline");
+        require(this.isAirlineFunded(airlineAddress), "Airline must be a registered airline");
         _;
     }
 
@@ -149,23 +146,29 @@ contract FlightSuretyData {
         delete authorizedContracts[contractAddress];
     }
 
-    function isAirlineRegistered(address airlineAddress) public view returns(bool)
+    function isAirlineRegistered(address airlineAddress) external view returns(bool)
     {
         return airlines[airlineAddress].registered;
     }
 
-    function isAirlineFunded(address airlineAddress) public view returns(bool)
+    function isAirlineFunded(address airlineAddress) external view returns(bool)
     {
         return airlines[airlineAddress].funded;
     }
 
-    function getAirlineAddresses() external view returns(address[] memory) {
+    function getAirlineVotes(address airlineAddress) external view returns(uint256)
+    {
+        return airlines[airlineAddress].votes;
+    }
+
+    function getAirlineAddresses() external view returns(address[] memory)
+    {
         return airlineAddresses;
     }
 
-    function isFlightRegistered(address airline, string flight, uint256 timestamp) public view returns(bool)
+    function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) public view returns(bool)
     {
-        return flights[getFlightKey(airline, flight, timestamp)].registered;
+        return flights[getFlightKey(airlineAddress, flight, timestamp)].registered;
     }
 
     /********************************************************************************************/
@@ -177,20 +180,20 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */
-    function registerAirline(address airlineAddress, string airlineName) external requireIsOperational requireAuthorizedContract requireNotAlreadyRegistered(airlineAddress)
+    function registerAirline(address airlineAddress, string airlineName) external requireIsOperational requireAuthorizedContract
     {
         airlines[airlineAddress] = Airline({name: airlineName, registered: true, funded: false, votes: 0});
         airlineAddresses.push(airlineAddress);
         emit AirlineRegistered(airlineAddress, airlineName);
     }
 
-    function fundAirline(address airlineAddress) external payable requireIsOperational requireAuthorizedContract requireRegisteredAirline(airlineAddress)
+    function fundAirline(address airlineAddress) external requireIsOperational requireAuthorizedContract
     {
         airlines[airlineAddress].funded = true;
         emit AirlineFunded(airlineAddress, airlines[airlineAddress].name);
     }
 
-    function registerFlight(address airlineAddress, string flight, uint256 timestamp) external requireIsOperational requireAuthorizedContract requireFundedAirline(airlineAddress)
+    function registerFlight(address airlineAddress, string flight, uint256 timestamp) external requireIsOperational requireAuthorizedContract
     {
         bytes32 flightKey = getFlightKey(airlineAddress, flight, timestamp);
         flights[flightKey] = Flight({registered: true, statusCode: STATUS_CODE_UNKNOWN, airline: airlineAddress, flight: flight, updatedTimestamp: timestamp});
