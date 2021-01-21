@@ -1,7 +1,7 @@
 
 var Test = require('../config/testConfig.js');
 var BigNumber = require('bignumber.js');
-const truffleAssert = require('truffle-assertions');
+// const truffleAssert = require('truffle-assertions');
 
 contract('Flight Surety Tests', async (accounts) => {
 
@@ -75,7 +75,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
         it('(airline) first airline is registered when contract is deployed', async function () {
             // ACT
-            let airlines = await config.flightSuretyData.getAirlineAddresses({from: config.owner});
+            let airlines = await config.flightSuretyData.getAirlineAddresses();
 
             // ASSERT
             assert.equal(airlines[0], config.owner, "First airline is not registered when contract is deployed")
@@ -87,7 +87,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(config.firstAirline, "First Airline", {from: config.owner});
+                await config.flightSuretyApp.registerAirline(config.firstAirline, "First Airline");
             }
             catch(e) {
 
