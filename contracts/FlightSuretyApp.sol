@@ -153,7 +153,7 @@ contract FlightSuretyApp {
         if(msg.value > AIRLINE_FUNDING_MIN_AMOUNT) {
             msg.sender.transfer(msg.value - AIRLINE_FUNDING_MIN_AMOUNT);
         }
-        flightSuretyData.fundAirline(msg.sender);
+        flightSuretyData.fundRegisteredAirline(msg.sender);
         emit AirlineFunded(msg.sender, msg.value);
     }
 
@@ -387,7 +387,7 @@ contract FlightSuretyData {
 
     // Contract functions
     function registerAirline(address airlineAddress, string airlineName) external;
-    function fundAirline(address airlineAddress) external;
+    function fundRegisteredAirline(address airlineAddress) external;
     function registerFlight(address airlineAddress, string flight, uint256 timestamp) external;
     function processFlightStatus(address airlineAddress, string flight, uint256 timestamp, uint8 statusCode, uint256 multiplier) external;
     function buyInsurance(address airlineAddress, string flight, uint256 timestamp, address passenger, uint256 amount) external;

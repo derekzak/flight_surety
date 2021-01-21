@@ -56,11 +56,11 @@ contract FlightSuretyData {
     * @dev Constructor
     *      The deploying account becomes contractOwner
     */
-    constructor() public
+    constructor(address airlineAddress, string name) public
     {
         contractOwner = msg.sender;
-        airlines[msg.sender] = Airline({name: 'Owner Air', registered: true, funded: true, votes: 0});
-        airlineAddresses.push(msg.sender);
+        airlines[airlineAddress] = Airline({name: name, registered: true, funded: true, votes: 0});
+        airlineAddresses.push(airlineAddress);
     }
 
     /********************************************************************************************/
@@ -221,7 +221,7 @@ contract FlightSuretyData {
         emit AirlineRegistered(airlineAddress, airlineName);
     }
 
-    function fundAirline(address airlineAddress) external requireIsOperational requireAuthorizedContract
+    function fundRegisteredAirline(address airlineAddress) external requireIsOperational requireAuthorizedContract
     {
         airlines[airlineAddress].funded = true;
         emit AirlineFunded(airlineAddress, airlines[airlineAddress].name);

@@ -78,7 +78,7 @@ contract('Flight Surety Tests', async (accounts) => {
             let airlines = await config.flightSuretyData.getAirlineAddresses();
 
             // ASSERT
-            assert.equal(airlines[0], config.owner, "First airline is not registered when contract is deployed")
+            assert.equal(airlines[0], config.firstAirline, "First airline is not registered when contract is deployed")
         });
     });
 
@@ -87,12 +87,12 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(config.firstAirline, "First Airline");
+                await config.flightSuretyApp.registerAirline(accounts[2], "Second Airline", {from: config.firstAirline});
             }
             catch(e) {
 
             }
-            let result = await config.flightSuretyData.isAirlineRegistered.call(config.firstAirline);
+            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[2]);
 
             // ASSERT
             assert.equal(result, true, "Airline should be able to register another airline");
@@ -101,11 +101,11 @@ contract('Flight Surety Tests', async (accounts) => {
         it('(airline) cannot register an Airline using registerAirline() if it is not funded', async function () {
 
             // ARRANGE
-            let newAirline = accounts[2];
+            let newAirline = accounts[3];
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(newAirline, 'New Airline', {from: config.firstAirline});
+                await config.flightSuretyApp.registerAirline(newAirline, 'New Airline', {from: accounts[2]});
             }
             catch(e) {
 
@@ -120,10 +120,11 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ARRANGE
             let reverted = false;
+            let amount = web3.utils.toWei('7', 'ether');
 
             // ACT
             try {
-                await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('7', 'ether'), gasPrice: 0});
+                await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
             }
             catch(e) {
                 reverted = true;
@@ -135,14 +136,17 @@ contract('Flight Surety Tests', async (accounts) => {
 
         it('(airline) can fund itself using fundAirline() if it is registered', async function () {
 
+            // ARRANGE
+            let amount = web3.utils.toWei('10', 'ether');
+
             // ACT
             try {
-                await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether'), gasPrice: 0});
+                await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
             }
             catch(e) {
                 console.log(e);
             }
-            let result = await config.flightSuretyData.isAirlineFunded.call(config.firstAirline);
+            let result = await config.flightSuretyData.isAirlineFunded.call(accounts[2]);
 
             // ASSERT
             assert.equal(result, true, "Airline should be able to fund itself");
