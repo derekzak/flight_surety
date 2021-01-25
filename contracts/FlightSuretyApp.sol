@@ -151,7 +151,7 @@ contract FlightSuretyApp {
     {
         make_payable(address(flightSuretyData)).transfer(AIRLINE_FUNDING_MIN_AMOUNT);
         if(msg.value > AIRLINE_FUNDING_MIN_AMOUNT) {
-            msg.sender.transfer(msg.value - AIRLINE_FUNDING_MIN_AMOUNT);
+            msg.sender.transfer(msg.value.sub(AIRLINE_FUNDING_MIN_AMOUNT));
         }
         flightSuretyData.fundRegisteredAirline(msg.sender);
         emit AirlineFunded(msg.sender, msg.value);

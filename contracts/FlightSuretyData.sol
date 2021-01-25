@@ -59,7 +59,7 @@ contract FlightSuretyData {
     constructor(address airlineAddress, string name) public
     {
         contractOwner = msg.sender;
-        airlines[airlineAddress] = Airline({name: name, registered: true, funded: true, votes: 0});
+        airlines[airlineAddress] = Airline({name: name, registered: true, funded: false, votes: 0});
         airlineAddresses.push(airlineAddress);
     }
 

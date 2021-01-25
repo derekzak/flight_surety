@@ -84,9 +84,12 @@ contract('Flight Surety Tests', async (accounts) => {
 
     describe('FlightSuretyApp tests', function() {
         it('(airline) can register an Airline using registerAirline() if it is funded', async function ()  {
+            // ARRANGE
+            let amount = web3.utils.toWei('10', 'ether');
 
             // ACT
             try {
+                await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: amount, gasPrice: 0});
                 await config.flightSuretyApp.registerAirline(accounts[2], "Second Airline", {from: config.firstAirline});
             }
             catch(e) {
