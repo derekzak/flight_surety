@@ -141,7 +141,7 @@ contract FlightSuretyApp {
     function registerAirline(address airlineAddress, string airlineName) public requireIsOperational requireAirlineIsFunded(msg.sender) returns(bool success)
     {
         uint airlineCount = flightSuretyData.getRegisteredAirlineCount();
-        if (airlineCount <= AIRLINE_REGISTRATION_COUNT_THRESHOLD) {
+        if (airlineCount < AIRLINE_REGISTRATION_COUNT_THRESHOLD) {
             flightSuretyData.registerAirline(airlineAddress, airlineName);
         } else {
             pendingAirlines[airlineAddress].voters.push(msg.sender);

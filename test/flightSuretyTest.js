@@ -154,6 +154,63 @@ contract('Flight Surety Tests', async (accounts) => {
             // ASSERT
             assert.equal(result, true, "Airline should be able to fund itself");
         });
+
+        it('(airline) can register up to 4 airlines', async () => {
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerAirline(accounts[3], "Third Airline", {from: config.firstAirline});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[3]);
+
+            // ASSERT
+            assert.equal(result, true, "Registering the third airline should be possible");
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerAirline(accounts[4], "Fourth Airline", {from: config.firstAirline});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            result = await config.flightSuretyData.isAirlineRegistered.call(accounts[4]);
+
+            // ASSERT
+            assert.equal(result, true, "Registering the fourth airline should be possible");
+        });
+
+        it('(airline) 5th airline requires multi-party concensus', async () => {
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerAirline(accounts[5], "Fifth Airline", {from: config.firstAirline});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[5]);
+
+            // ASSERT
+            assert.equal(result, false, "Registering the fifth airline should not be possible");
+        });
+
+        it('(airline) 5th airline is registered with multi-party concensus', async () => {
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerAirline(accounts[5], "Fifth Airline", {from: accounts[2]});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[5]);
+
+            // ASSERT
+            assert.equal(result, true, "Registering the fifth airline should be possible");
+        });
     });
 
 });
