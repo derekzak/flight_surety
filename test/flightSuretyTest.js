@@ -127,7 +127,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
+                let result = await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
             }
             catch(e) {
                 reverted = true;

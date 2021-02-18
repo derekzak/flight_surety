@@ -121,11 +121,6 @@ contract FlightSuretyApp {
         return flightSuretyData.isOperational();
     }
 
-    function make_payable(address x) internal pure returns(address)
-    {
-        return address(uint160(x));
-    }
-
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -149,7 +144,7 @@ contract FlightSuretyApp {
     */
     function fundAirline() payable external requireIsOperational requireFundingMinimum(msg.value)
     {
-        make_payable(address(flightSuretyData)).transfer(AIRLINE_FUNDING_MIN_AMOUNT);
+        address(uint160(address(flightSuretyData))).transfer(AIRLINE_FUNDING_MIN_AMOUNT);
         if(msg.value > AIRLINE_FUNDING_MIN_AMOUNT) {
             msg.sender.transfer(msg.value.sub(AIRLINE_FUNDING_MIN_AMOUNT));
         }
