@@ -17,8 +17,6 @@ contract FlightSuretyData {
         string name;
         bool registered;
         bool funded;
-        mapping(address => bool) voters;
-        uint256 votes;
     }
     mapping(address => Airline) private airlines;
     address[] airlineAddresses = new address[](0);
@@ -59,7 +57,7 @@ contract FlightSuretyData {
     constructor(address airlineAddress, string name) public
     {
         contractOwner = msg.sender;
-        airlines[airlineAddress] = Airline({name: name, registered: true, funded: false, votes: 0});
+        airlines[airlineAddress] = Airline({name: name, registered: true, funded: false});
         airlineAddresses.push(airlineAddress);
     }
 
@@ -164,37 +162,37 @@ contract FlightSuretyData {
         delete authorizedContracts[contractAddress];
     }
 
-    function isAirlineRegistered(address airlineAddress) external view returns(bool)
+    function isAirlineRegistered(address airlineAddress) external view requireIsOperational returns(bool)
     {
         return airlines[airlineAddress].registered;
     }
 
-    function isAirlineFunded(address airlineAddress) external view returns(bool)
+    function isAirlineFunded(address airlineAddress) external view requireIsOperational returns(bool)
     {
         return airlines[airlineAddress].funded;
     }
 
-    function getAirlineVotes(address airlineAddress) external view returns(uint256)
+    function getRegisteredAirlineCount() external view requireIsOperational returns(uint)
     {
-        return airlines[airlineAddress].votes;
+        return airlineAddresses.length;
     }
 
-    function getAirlineAddresses() external view returns(address[] memory)
+    function getAirlineAddresses() external view requireIsOperational returns(address[] memory)
     {
         return airlineAddresses;
     }
 
-    function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) external view returns(bool)
+    function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) external view requireIsOperational returns(bool)
     {
         return flights[getFlightKey(airlineAddress, flight, timestamp)].registered;
     }
 
-    function isFlightLanded(address airlineAddress, string flight, uint256 timestamp) external view returns(bool)
+    function isFlightLanded(address airlineAddress, string flight, uint256 timestamp) external view requireIsOperational returns(bool)
     {
         return flights[getFlightKey(airlineAddress, flight, timestamp)].statusCode > STATUS_CODE_UNKNOWN;
     }
 
-    function isPassengerInsured(address passenger, address airlineAddress, string flight, uint256 timestamp) external view returns(bool)
+    function isPassengerInsured(address passenger, address airlineAddress, string flight, uint256 timestamp) external view requireIsOperational returns(bool)
     {
         Insurance[] memory insuredPassengers = insuredPassengersByFlight[getFlightKey(airlineAddress, flight, timestamp)];
         for(uint i = 0; i < insuredPassengers.length; i++) {
@@ -216,7 +214,7 @@ contract FlightSuretyData {
     */
     function registerAirline(address airlineAddress, string airlineName) external requireIsOperational requireAuthorizedContract
     {
-        airlines[airlineAddress] = Airline({name: airlineName, registered: true, funded: false, votes: 0});
+        airlines[airlineAddress] = Airline({name: airlineName, registered: true, funded: false});
         airlineAddresses.push(airlineAddress);
         emit AirlineRegistered(airlineAddress, airlineName);
     }

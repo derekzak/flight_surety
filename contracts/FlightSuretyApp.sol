@@ -20,7 +20,16 @@ contract FlightSuretyApp {
 
     address private contractOwner;          // Account used to deploy contract
 
+    // Multi-party consensus for airline registration
+    struct PendingAirline {
+        address[] voters;
+        uint256 votes;
+    }
+    mapping(address => PendingAirline) private pendingAirlines;
     uint constant AIRLINE_REGISTRATION_COUNT_THRESHOLD = 4;
+    uint constant AIRLINE_REGISTRATION_COUNT_CONSENSUS_DIVISOR = 2;
+
+    // Amount limits
     uint constant AIRLINE_FUNDING_MIN_AMOUNT = 10 ether;
     uint constant PASSENGER_INSURANCE_MAX_AMOUNT = 1 ether;
     uint constant INSURANCE_PAYOUT_MULTIPLIER = 150;
@@ -53,8 +62,7 @@ contract FlightSuretyApp {
     */
     modifier requireIsOperational()
     {
-         // Modify to call data contract's status
-        require(true, "Contract is currently not operational");
+        require(flightSuretyData.isOperational(), "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -107,7 +115,7 @@ contract FlightSuretyApp {
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
-    event AirlineRegistered(address airlineAddress, string airlineName, uint256 votes);
+    event AirlineRegistered(address airlineAddress, string airlineName);
     event AirlineFunded(address airlineAddress, uint256 amount);
     event FlightRegistered(address airlineAddress, string flight, uint256 timestamp);
     event InsuranceBought(address airlineAddress, string flight, uint256 timestamp, address passenger, uint256 amount);
@@ -130,12 +138,22 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */
-    function registerAirline(address airlineAddress, string airlineName) public requireIsOperational requireAirlineIsFunded(msg.sender) returns(bool success, uint256 votes)
+    function registerAirline(address airlineAddress, string airlineName) public requireIsOperational requireAirlineIsFunded(msg.sender) returns(bool success)
     {
-        flightSuretyData.registerAirline(airlineAddress, airlineName);
-        votes = flightSuretyData.getAirlineVotes(airlineAddress);
-        emit AirlineRegistered(airlineAddress, airlineName, votes);
-        return (success, votes);
+        uint airlineCount = flightSuretyData.getRegisteredAirlineCount();
+        if (airlineCount <= AIRLINE_REGISTRATION_COUNT_THRESHOLD) {
+            flightSuretyData.registerAirline(airlineAddress, airlineName);
+        } else {
+            pendingAirlines[airlineAddress].voters.push(msg.sender);
+            pendingAirlines[airlineAddress].votes = pendingAirlines[airlineAddress].voters.length;
+            if (pendingAirlines[airlineAddress].votes >= airlineCount.div(AIRLINE_REGISTRATION_COUNT_CONSENSUS_DIVISOR)) {
+                flightSuretyData.registerAirline(airlineAddress, airlineName);
+                delete pendingAirlines[airlineAddress].voters;
+                pendingAirlines[airlineAddress].votes = 0;
+            }
+        }
+        emit AirlineRegistered(airlineAddress, airlineName);
+        return (success);
     }
 
    /**
@@ -374,7 +392,7 @@ contract FlightSuretyData {
     function setOperatingStatus(bool mode) external;
     function isAirlineRegistered(address airlineAddress) external view returns(bool);
     function isAirlineFunded(address airlineAddress) external view returns(bool);
-    function getAirlineVotes(address airlineAddress) external view returns(uint256);
+    function getRegisteredAirlineCount() external view returns(uint);
     function getAirlineAddresses() external view returns(address[] memory);
     function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
     function isFlightLanded(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
