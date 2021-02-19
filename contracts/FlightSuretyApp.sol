@@ -397,6 +397,7 @@ contract FlightSuretyData {
     function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
     function isFlightLanded(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
     function isPassengerInsured(address passenger, address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
+    function getOutstandingPaymentAmount(address passenger) external view returns (uint256);
 
     // Contract functions
     function registerAirline(address airlineAddress, string airlineName) external;

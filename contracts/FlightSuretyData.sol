@@ -203,6 +203,11 @@ contract FlightSuretyData {
         return false;
     }
 
+    function getOutstandingPaymentAmount(address passenger) external view returns (uint256)
+    {
+        return outstandingPayments[passenger];
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/

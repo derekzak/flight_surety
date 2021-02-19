@@ -78,7 +78,7 @@ contract('Flight Surety Tests', async (accounts) => {
             let airlines = await config.flightSuretyData.getAirlineAddresses();
 
             // ASSERT
-            assert.equal(airlines[0], config.firstAirline, "First airline is not registered when contract is deployed")
+            assert.equal(airlines[0], config.airline1, "First airline is not registered when contract is deployed")
         });
     });
 
@@ -89,13 +89,13 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: amount, gasPrice: 0});
-                await config.flightSuretyApp.registerAirline(accounts[2], "Second Airline", {from: config.firstAirline});
+                await config.flightSuretyApp.fundAirline({from: config.airline1, value: amount, gasPrice: 0});
+                await config.flightSuretyApp.registerAirline(config.airline2, "Second Airline", {from: config.airline1});
             }
             catch(e) {
 
             }
-            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[2]);
+            let result = await config.flightSuretyData.isAirlineRegistered.call(config.airline2);
 
             // ASSERT
             assert.equal(result, true, "Airline should be able to register another airline");
@@ -104,11 +104,11 @@ contract('Flight Surety Tests', async (accounts) => {
         it('(airline) cannot register an Airline using registerAirline() if it is not funded', async function () {
 
             // ARRANGE
-            let newAirline = accounts[3];
+            let newAirline = config.airline3;
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(newAirline, 'New Airline', {from: accounts[2]});
+                await config.flightSuretyApp.registerAirline(newAirline, 'New Airline', {from: config.airline2});
             }
             catch(e) {
 
@@ -127,7 +127,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                let result = await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
+                let result = await config.flightSuretyApp.fundAirline({from: config.airline2, value: amount, gasPrice: 0});
             }
             catch(e) {
                 reverted = true;
@@ -144,12 +144,12 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.fundAirline({from: accounts[2], value: amount, gasPrice: 0});
+                await config.flightSuretyApp.fundAirline({from: config.airline2, value: amount, gasPrice: 0});
             }
             catch(e) {
                 console.log(e);
             }
-            let result = await config.flightSuretyData.isAirlineFunded.call(accounts[2]);
+            let result = await config.flightSuretyData.isAirlineFunded.call(config.airline2);
 
             // ASSERT
             assert.equal(result, true, "Airline should be able to fund itself");
@@ -159,24 +159,24 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(accounts[3], "Third Airline", {from: config.firstAirline});
+                await config.flightSuretyApp.registerAirline(config.airline3, "Third Airline", {from: config.airline1});
             }
             catch(e) {
                 console.log(e);
             }
-            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[3]);
+            let result = await config.flightSuretyData.isAirlineRegistered.call(config.airline3);
 
             // ASSERT
             assert.equal(result, true, "Registering the third airline should be possible");
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(accounts[4], "Fourth Airline", {from: config.firstAirline});
+                await config.flightSuretyApp.registerAirline(config.airline4, "Fourth Airline", {from: config.airline1});
             }
             catch(e) {
                 console.log(e);
             }
-            result = await config.flightSuretyData.isAirlineRegistered.call(accounts[4]);
+            result = await config.flightSuretyData.isAirlineRegistered.call(config.airline4);
 
             // ASSERT
             assert.equal(result, true, "Registering the fourth airline should be possible");
@@ -186,12 +186,12 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(accounts[5], "Fifth Airline", {from: config.firstAirline});
+                await config.flightSuretyApp.registerAirline(config.airline5, "Fifth Airline", {from: config.airline1});
             }
             catch(e) {
                 console.log(e);
             }
-            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[5]);
+            let result = await config.flightSuretyData.isAirlineRegistered.call(config.airline5);
 
             // ASSERT
             assert.equal(result, false, "Registering the fifth airline should not be possible");
@@ -201,15 +201,120 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ACT
             try {
-                await config.flightSuretyApp.registerAirline(accounts[5], "Fifth Airline", {from: accounts[2]});
+                await config.flightSuretyApp.registerAirline(config.airline5, "Fifth Airline", {from: config.airline2});
             }
             catch(e) {
                 console.log(e);
             }
-            let result = await config.flightSuretyData.isAirlineRegistered.call(accounts[5]);
+            let result = await config.flightSuretyData.isAirlineRegistered.call(config.airline5);
 
             // ASSERT
             assert.equal(result, true, "Registering the fifth airline should be possible");
+        });
+
+        it('(flight) funded airline can register new flights', async () => {
+
+            // ARRANGE
+            let result = undefined;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerFlight(config.flight1.flight, config.flight1.timestamp, {from: config.flight1.airline});
+                await config.flightSuretyApp.registerFlight(config.flight2.flight, config.flight2.timestamp, {from: config.flight2.airline});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            result = await config.flightSuretyData.isFlightRegistered.call(config.flight1.airline, config.flight1.flight, config.flight1.timestamp);
+
+            // ASSERT
+            assert.equal(result, true, "Funded airline can register new flight");
+        });
+
+        it('(flight) non-funded airline cannot register new flight', async () => {
+
+            // ARRANGE
+            let reverted = false;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.registerFlight(config.flight3.flight, config.flight3.timestamp, {from: config.flight3.airline});
+            }
+            catch(e) {
+                reverted = true;
+            }
+
+            // ASSERT
+            assert.equal(reverted, true, "Funded airline cannot register new flight");
+        });
+
+        it('(passenger) cannot buy insurance without a value amount', async () => {
+
+            // ARRANGE
+            let reverted = false;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.buyInsurance(config.flight2.airline, config.flight2.flight, config.flight2.timestamp, {from: config.passenger1, value: 0, gasPrice: 0});
+            }
+            catch(e) {
+                reverted = true;
+            }
+
+            // ASSERT
+            assert.equal(reverted, true, "No value provided to buy insurance");
+        });
+
+        it('(passenger) cannot buy insurance above the insurance amount limit', async () => {
+
+            // ARRANGE
+            let reverted = false;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.buyInsurance(config.flight2.airline, config.flight2.flight, config.flight2.timestamp, {from: config.passenger1, value: web3.utils.toWei("1.5", "ether"), gasPrice: 0});
+            }
+            catch(e) {
+                reverted = true;
+            }
+
+            // ASSERT
+            assert.equal(reverted, true, "Insurance amount is above maximum allowed limit");
+        });
+
+        it('(passenger) cannot buy insurance for non-registered flight', async () => {
+
+            // ARRANGE
+            let reverted = false;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.buyInsurance(config.flight3.airline, config.flight3.flight, config.flight3.timestamp, {from: config.passenger1, value: web3.utils.toWei("0.1", "ether"), gasPrice: 0});
+            }
+            catch(e) {
+                reverted = true;
+            }
+
+            // ASSERT
+            assert.equal(reverted, true, "Flight is not registered");
+        });
+
+        it('(passenger) can buy insurance', async () => {
+
+            // ARRANGE
+            let result = undefined;
+
+            // ACT
+            try {
+                await config.flightSuretyApp.buyInsurance(config.flight1.airline, config.flight1.flight, config.flight1.timestamp, {from: config.passenger1, value: web3.utils.toWei("0.5", "ether"), gasPrice: 0});
+            }
+            catch(e) {
+                console.log(e);
+            }
+            result = await config.flightSuretyData.isPassengerInsured.call(config.passenger1, config.flight1.airline, config.flight1.flight, config.flight1.timestamp);
+
+            // ASSERT
+            assert.equal(result, true, "Passenger can buy insurance");
         });
     });
 
