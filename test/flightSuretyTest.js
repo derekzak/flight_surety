@@ -358,6 +358,15 @@ contract('Flight Surety Tests', async (accounts) => {
             }
         });
 
+        it('(oracles) flight status code set correctly', async () => {
+
+            // ACT
+            let result = await config.flightSuretyData.getFlightStatusCode(config.flight1.airline, config.flight1.flight, config.flight1.timestamp, {from: config.owner});
+
+            // ASSERT
+            assert.equal(result, STATUS_CODE_LATE_AIRLINE, "Flight is not late");
+        });
+
         it('(insurance) passenger is credited the correct amount for their insurance', async () => {
 
             // ARRANGE
@@ -365,6 +374,24 @@ contract('Flight Surety Tests', async (accounts) => {
 
             // ASSERT
             assert.equal(amount, web3.utils.toWei("0.5", "ether") * 1.5, "Insurance amount not calculated correctly");
+        });
+
+        it('(insurance) can withdraw outstanding payment amount', async () => {
+
+            // ARRANGE
+            let amount = await config.flightSuretyData.getOutstandingPaymentAmount(config.passenger1);
+            let balanceBeforePay = await web3.eth.getBalance(config.passenger1);
+
+            // ACT
+            try {
+                await config.flightSuretyApp.pay({from: config.passenger1, gasPrice: 0});
+            } catch (e) {
+                console.log(e);
+            }
+            let balanceAfterPay = await web3.eth.getBalance(config.passenger1);
+
+            // ASSERT
+            assert.equal((balanceAfterPay - balanceBeforePay), amount, "Cannot withdraw insurance from outstanding payment account");
         });
     });
 

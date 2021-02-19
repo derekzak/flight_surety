@@ -119,6 +119,7 @@ contract FlightSuretyApp {
     event AirlineFunded(address airlineAddress, uint256 amount);
     event FlightRegistered(address airlineAddress, string flight, uint256 timestamp);
     event InsuranceBought(address airlineAddress, string flight, uint256 timestamp, address passenger, uint256 amount);
+    event InsurancePaid(address passengerAddress);
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
@@ -184,6 +185,12 @@ contract FlightSuretyApp {
         address(uint160(address(flightSuretyData))).transfer(msg.value);
         flightSuretyData.buyInsurance(airlineAddress, flight, timestamp, msg.sender, msg.value);
         emit InsuranceBought(airlineAddress, flight, timestamp, msg.sender, msg.value);
+    }
+
+    function pay() public requireIsOperational
+    {
+        flightSuretyData.pay(msg.sender);
+        emit InsurancePaid(msg.sender);
     }
 
    /**
@@ -396,6 +403,7 @@ contract FlightSuretyData {
     function getAirlineAddresses() external view returns(address[] memory);
     function isFlightRegistered(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
     function isFlightLanded(address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
+    function getFlightStatusCode(address airlineAddress, string flight, uint256 timestamp) external view returns(uint8);
     function isPassengerInsured(address passenger, address airlineAddress, string flight, uint256 timestamp) external view returns(bool);
     function getOutstandingPaymentAmount(address passenger) external view returns (uint256);
 

@@ -192,6 +192,10 @@ contract FlightSuretyData {
         return flights[getFlightKey(airlineAddress, flight, timestamp)].statusCode > STATUS_CODE_UNKNOWN;
     }
 
+    function getFlightStatusCode(address airlineAddress, string flight, uint256 timestamp) external view returns(uint8) {
+        return flights[getFlightKey(airlineAddress, flight, timestamp)].statusCode;
+    }
+
     function isPassengerInsured(address passenger, address airlineAddress, string flight, uint256 timestamp) external view requireIsOperational returns(bool)
     {
         Insurance[] memory insuredPassengers = insuredPassengersByFlight[getFlightKey(airlineAddress, flight, timestamp)];
